@@ -7,7 +7,7 @@ xscept is a zero-friction HTTP interceptor that makes it effortless to capture n
 
 ## ⚙️ Preview
 
-![Preview](https://s7.ezgif.com/tmp/ezgif-7fa4f33f29a335.gif)
+![Preview](./public/xscept-demo.gif)
 
 
 ## ❓ FAQ
