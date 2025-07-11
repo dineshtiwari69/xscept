@@ -14,10 +14,15 @@ from mitmproxy.tools.dump import DumpMaster
 
 from addons.addon import LoggerAddon  # Your custom addon
 from routes.interceptors import interceptor_routers  # Your routes
-
+from routes.logs import logs_router
 
 app = FastAPI()
+app.state.runtime_state = {
+    "browsers_running":[],
+    "child_processes": [],
+}
 app.include_router(interceptor_routers)
+app.include_router(logs_router)
 
 # Allow CORS from everywhere
 app.add_middleware(
@@ -65,6 +70,11 @@ def run_ws_server():
 
 def kill_process():
     """Forcefully shutdown the current process."""
+    for process in app.state.runtime_state["child_processes"]:
+        try:
+            os.kill(process,signal.SIGINT)
+        except Exception:
+            pass
     os.kill(os.getpid(), signal.SIGINT)
 
 

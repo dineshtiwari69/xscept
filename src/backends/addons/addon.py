@@ -5,7 +5,7 @@ import json
 from tinydb import TinyDB
 import os
 from pathlib import Path
-
+from utils.paths import APP_DATA_PATH
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(message)s')
 
 class LoggerAddon:
@@ -13,12 +13,14 @@ class LoggerAddon:
         self.ws_broadcast = ws_broadcast
 
         # Build path: %LOCALAPPDATA%\com.xscept.app\logs
-        appdata_local = Path(os.getenv('LOCALAPPDATA'))
+        appdata_local = APP_DATA_PATH
         log_dir = appdata_local / "com.xscept.app" / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)  # Create dirs if not exist
 
         self.db_path = log_dir / "flows.json"
         self.db = TinyDB(self.db_path)
+        
+        self.db.truncate()
 
     def _store(self, data: dict):
         self.db.insert(data)
@@ -51,7 +53,18 @@ class LoggerAddon:
             "status_code": flow.response.status_code,
             "url": flow.request.url,
             "headers": dict(flow.response.headers),
+            "body": flow.response.get_text()
+        }
+        
+        #donot broadcast body to keep the request logs lightweight , we will query the body when user clicks detailed view
+        
+        response_data_to_broadcast = {
+            "type": "response",
+            "flow_id": flow.id,
+            "status_code": flow.response.status_code,
+            "url": flow.request.url,
+            "headers": dict(flow.response.headers),
             "body": None
         }
         self._store(response_data)
-        self._broadcast(response_data)
+        self._broadcast(response_data_to_broadcast)

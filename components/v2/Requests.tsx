@@ -1,7 +1,7 @@
 import { Unplug, ArrowLeft, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { Chrome, Smartphone, HelpCircle } from 'lucide-react';
-
+import { FaFirefox } from 'react-icons/fa';
 type RequestLog = {
   type: "request";
   flow_id: string;
@@ -31,14 +31,14 @@ type CombinedLog = {
 export default function Requests() {
   const [logs, setLogs] = useState<CombinedLog[]>([]);
   const [selectedLog, setSelectedLog] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({});
+  const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({});
   const [contextMenu, setContextMenu] = useState<{
     show: boolean;
     x: number;
     y: number;
     logData: any;
   }>({ show: false, x: 0, y: 0, logData: null });
-  
+
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -55,10 +55,10 @@ export default function Requests() {
       ws.onmessage = (event) => {
         try {
           const logData: MitmLog = JSON.parse(event.data);
-          
+
           setLogs(prevLogs => {
             const existingLogIndex = prevLogs.findIndex(log => log.flow_id === logData.flow_id);
-            
+
             if (existingLogIndex !== -1) {
               // Update existing log
               const updatedLogs = [...prevLogs];
@@ -118,11 +118,11 @@ export default function Requests() {
 
   const handleContextMenu = (e: React.MouseEvent, log: any) => {
     e.preventDefault();
-    
+
     // Get the position relative to the component container
     const rect = e.currentTarget.getBoundingClientRect();
     const containerRect = (e.currentTarget.closest('.flex.h-\\[75vh\\]') as HTMLElement)?.getBoundingClientRect();
-    
+
     if (containerRect) {
       setContextMenu({
         show: true,
@@ -144,17 +144,17 @@ export default function Requests() {
 
     const request = log.request;
     let curl = `curl -X ${request.method}`;
-    
+
     // Add URL
     curl += ` "${request.url}"`;
-    
+
     // Add headers
     if (request.headers) {
       Object.entries(request.headers).forEach(([key, value]) => {
         curl += ` -H "${key}: ${value}"`;
       });
     }
-    
+
     // Add body if it exists (for POST, PUT, etc.)
     if (request.body) {
       curl += ` -d '${request.body}'`;
@@ -164,7 +164,7 @@ export default function Requests() {
       console.log('Copied to clipboard:', curl);
       // You might want to show a toast notification here
     });
-    
+
     setContextMenu({ show: false, x: 0, y: 0, logData: null });
   };
 
@@ -175,16 +175,32 @@ export default function Requests() {
     // This would typically send the request to a repeater tab/component
     console.log('Sending to repeater:', log);
     // You would implement the actual repeater functionality here
-    
+
     setContextMenu({ show: false, x: 0, y: 0, logData: null });
   };
 
   const getSourceIcon = (userAgent: string) => {
-    if (/chrome/i.test(userAgent)) {
+    const ua = userAgent.toLowerCase();
+
+    if (ua.includes("edg")) {
+      // Edge has "Edg" in UA
       return <Chrome className="w-4 h-4" />;
     }
 
-    if (/android/i.test(userAgent)) {
+    if (ua.includes("chrome") && !ua.includes("edg") && !ua.includes("opr")) {
+      // Chrome (exclude Edge and Opera)
+      return <Chrome className="w-4 h-4" />;
+    }
+
+    if (ua.includes("firefox")) {
+      return <HelpCircle className="w-4 h-4" />;;
+    }
+
+    if (ua.includes("safari") && !ua.includes("chrome")) {
+      return <HelpCircle className="w-4 h-4" />;;
+    }
+
+    if (ua.includes("android")) {
       return <Smartphone className="w-4 h-4" />;
     }
 
@@ -227,7 +243,7 @@ export default function Requests() {
 
   const renderHeaders = (headers: Record<string, string>) => {
     if (!headers) return null;
-    
+
     return Object.entries(headers).map(([key, value]) => (
       <div key={key} className="flex items-start text-sm mb-2">
         <Plus className="w-3 h-3 mt-0.5 mr-2 text-gray-500" />
@@ -259,9 +275,8 @@ export default function Requests() {
               onClick={() => handleClick(log)}
               onContextMenu={(e) => handleContextMenu(e, log)}
               key={index}
-              className={`flex px-4 py-2 border-b border-gray-800 text-sm hover:bg-gray-800 transition cursor-pointer ${
-                selectedLog === log.flow_id ? 'bg-gray-800' : ''
-              }`}
+              className={`flex px-4 py-2 border-b border-gray-800 text-sm hover:bg-gray-800 transition cursor-pointer ${selectedLog === log.flow_id ? 'bg-gray-800' : ''
+                }`}
             >
               <span className="w-20 truncate">{log.request?.method || '-'}</span>
               <span className="w-20 truncate">{log.response?.status_code || '-'}</span>
@@ -276,15 +291,28 @@ export default function Requests() {
               </span>
             </div>
           )) || (
-            <div className="flex flex-col items-center justify-center h-full px-8">
-              <Unplug className="w-16 h-16 text-gray-600 mb-4" />
-              <p className="text-lg text-gray-400 text-center leading-relaxed">
-                Connect a client and intercept some requests, and {"they'll"} appear here.
-              </p>
-            </div>
-          )}
+              <div className="flex flex-col items-center justify-center h-full px-8">
+                <Unplug className="w-16 h-16 text-gray-600 mb-4" />
+                <p className="text-lg text-gray-400 text-center leading-relaxed">
+                  Connect a client and intercept some requests, and {"they'll"} appear here.
+                </p>
+              </div>
+            )}
+        </div>
+        <div className="border-t border-gray-700 p-3 bg-secondary">
+          <button
+            onClick={() => {
+              setLogs([]);
+              setSelectedLog(null);
+              setContextMenu({ show: false, x: 0, y: 0, logData: null });
+            }}
+            className="w-full text-sm text-red-400 hover:text-red-300 transition-colors"
+          >
+            Clear Logs
+          </button>
         </div>
       </div>
+
 
       {/* Right Panel */}
       <div className="w-1/2 flex flex-col">
@@ -424,6 +452,10 @@ export default function Requests() {
           </button>
         </div>
       )}
+
+
+
+
     </div>
   );
 }
