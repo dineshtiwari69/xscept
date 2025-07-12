@@ -30,6 +30,19 @@ If you're using HTTP Toolkit daily — go support them. They deserve it.
 - 🪶 Lightweight by design
 - 📋 One-click “Copy as cURL”
 
+
+## Prerequisites (For Local Development)
+
+xscept is built with tauri 2.0 which requires you to have rust and node installed. xscept uses python for its backend.
+
+```bash
+  rust
+  nodejs
+  pnpm
+  python
+```
+    
+
 ## 🧪 Run Locally 
 
 Clone the project
